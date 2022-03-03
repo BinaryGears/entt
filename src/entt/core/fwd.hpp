@@ -1,9 +1,11 @@
 #ifndef ENTT_CORE_FWD_HPP
 #define ENTT_CORE_FWD_HPP
 
+// IWYU pragma: begin_exports
 #include <cstdint>
 #include <type_traits>
 #include "../config/config.h"
+// IWYU pragma: end_exports
 
 namespace entt {
 

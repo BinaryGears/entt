@@ -8,7 +8,7 @@
 #        define ENTT_HAS_TRACKED_MEMORY_RESOURCE
 #
 #        include <cstddef>
-#        include <memory_resource>
+#        include <memory_resource> // IWYU pragma: export
 #        include <string>
 
 namespace test {

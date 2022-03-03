@@ -1,7 +1,9 @@
 #ifndef ENTT_SIGNAL_FWD_HPP
 #define ENTT_SIGNAL_FWD_HPP
 
+// IWYU pragma: begin_exports
 #include <memory>
+// IWYU pragma: end_exports
 
 namespace entt {
 

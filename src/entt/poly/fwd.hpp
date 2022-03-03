@@ -1,8 +1,10 @@
 #ifndef ENTT_POLY_FWD_HPP
 #define ENTT_POLY_FWD_HPP
 
+// IWYU pragma: begin_exports
 #include <cstdint>
 #include <type_traits>
+// IWYU pragma: end_exports
 
 namespace entt {
 

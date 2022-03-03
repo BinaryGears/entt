@@ -1,9 +1,11 @@
 #ifndef ENTT_ENTITY_FWD_HPP
 #define ENTT_ENTITY_FWD_HPP
 
+// IWYU pragma: begin_exports
 #include <memory>
 #include "../core/fwd.hpp"
 #include "../core/type_traits.hpp"
+// IWYU pragma: end_exports
 
 namespace entt {
 
