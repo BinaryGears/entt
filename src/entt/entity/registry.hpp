@@ -1250,7 +1250,7 @@ public:
      * @return A newly created group.
      */
     template<typename... Owned, typename... Get, typename... Exclude>
-    [[nodiscard]] auto group(get_t<Get...> = {}, exclude_t<Exclude...> = {}) {
+    [[nodiscard]] basic_group<owned_t<storage_for_t<Owned, entity_type>...>, get_t<storage_for_t<Get, entity_type>...>, exclude_t<storage_for_t<Exclude, entity_type>...>> group(get_t<Get...> = {}, exclude_t<Exclude...> = {}) {
         static_assert(sizeof...(Owned) + sizeof...(Get) > 0, "Exclusion-only groups are not supported");
         static_assert(sizeof...(Owned) + sizeof...(Get) + sizeof...(Exclude) > 1, "Single component groups are not allowed");
 
@@ -1327,13 +1327,12 @@ public:
             }
         }
 
-        using group_type = basic_group<owned_t<storage_for_t<Owned, entity_type>...>, get_t<storage_for_t<Get, entity_type>...>, exclude_t<storage_for_t<Exclude, entity_type>...>>;
-        return group_type{handler->current, std::get<storage_for_t<std::remove_const_t<Owned>, entity_type> &>(cpools)..., std::get<storage_for_t<std::remove_const_t<Get>, entity_type> &>(cpools)...};
+        return {handler->current, std::get<storage_for_t<std::remove_const_t<Owned>, entity_type> &>(cpools)..., std::get<storage_for_t<std::remove_const_t<Get>, entity_type> &>(cpools)...};
     }
 
     /*! @copydoc group */
     template<typename... Owned, typename... Get, typename... Exclude>
-    [[nodiscard]] auto group_if_exists(get_t<Get...> = {}, exclude_t<Exclude...> = {}) const {
+    [[nodiscard]] basic_group<owned_t<storage_for_t<const Owned, entity_type>...>, get_t<storage_for_t<const Get, entity_type>...>, exclude_t<storage_for_t<const Exclude, entity_type>...>> group_if_exists(get_t<Get...> = {}, exclude_t<Exclude...> = {}) const {
         auto it = std::find_if(groups.cbegin(), groups.cend(), [](const auto &gdata) {
             return gdata.size == (sizeof...(Owned) + sizeof...(Get) + sizeof...(Exclude))
                    && (gdata.owned(type_hash<std::remove_const_t<Owned>>::value()) && ...)
@@ -1341,9 +1340,12 @@ public:
                    && (gdata.exclude(type_hash<std::remove_const_t<Exclude>>::value()) && ...);
         });
 
-        using handler_type = group_handler<exclude_t<std::remove_const_t<Exclude>...>, get_t<std::remove_const_t<Get>...>, std::remove_const_t<Owned>...>;
-        using group_type = basic_group<owned_t<storage_for_t<const Owned, entity_type>...>, get_t<storage_for_t<const Get, entity_type>...>, exclude_t<storage_for_t<const Exclude, entity_type>...>>;
-        return it == groups.cend() ? group_type{} : group_type{static_cast<handler_type *>(it->group.get())->current, assure<std::remove_const_t<Owned>>()..., assure<std::remove_const_t<Get>>()...};
+        if(it == groups.cend()) {
+            return {};
+        } else {
+            using handler_type = group_handler<exclude_t<std::remove_const_t<Exclude>...>, get_t<std::remove_const_t<Get>...>, std::remove_const_t<Owned>...>;
+            return {static_cast<handler_type *>(it->group.get())->current, assure<std::remove_const_t<Owned>>()..., assure<std::remove_const_t<Get>>()...};
+        }
     }
 
     /**
