@@ -1244,13 +1244,13 @@ public:
      * The group takes the ownership of the pools and arrange components so as
      * to iterate them as fast as possible.
      *
-     * @tparam Owned Types of components owned by the group.
-     * @tparam Get Types of components observed by the group.
-     * @tparam Exclude Types of components used to filter the group.
+     * @tparam Owned Type of storage _owned_ by the group.
+     * @tparam Get Type of storage _observed_ by the group.
+     * @tparam Exclude Type of storage used to filter the group.
      * @return A newly created group.
      */
     template<typename... Owned, typename... Get, typename... Exclude>
-    [[nodiscard]] basic_group<entity_type, owned_t<Owned...>, get_t<Get...>, exclude_t<Exclude...>> group(get_t<Get...> = {}, exclude_t<Exclude...> = {}) {
+    [[nodiscard]] auto group(get_t<Get...> = {}, exclude_t<Exclude...> = {}) {
         static_assert(sizeof...(Owned) + sizeof...(Get) > 0, "Exclusion-only groups are not supported");
         static_assert(sizeof...(Owned) + sizeof...(Get) + sizeof...(Exclude) > 1, "Single component groups are not allowed");
 
@@ -1327,12 +1327,13 @@ public:
             }
         }
 
-        return {handler->current, std::get<storage_for_t<std::remove_const_t<Owned>, entity_type> &>(cpools)..., std::get<storage_for_t<std::remove_const_t<Get>, entity_type> &>(cpools)...};
+        using group_type = basic_group<owned_t<storage_for_t<Owned, entity_type>...>, get_t<storage_for_t<Get, entity_type>...>, exclude_t<storage_for_t<Exclude, entity_type>...>>;
+        return group_type{handler->current, std::get<storage_for_t<std::remove_const_t<Owned>, entity_type> &>(cpools)..., std::get<storage_for_t<std::remove_const_t<Get>, entity_type> &>(cpools)...};
     }
 
     /*! @copydoc group */
     template<typename... Owned, typename... Get, typename... Exclude>
-    [[nodiscard]] basic_group<entity_type, owned_t<const Owned...>, get_t<const Get...>, exclude_t<const Exclude...>> group_if_exists(get_t<Get...> = {}, exclude_t<Exclude...> = {}) const {
+    [[nodiscard]] auto group_if_exists(get_t<Get...> = {}, exclude_t<Exclude...> = {}) const {
         auto it = std::find_if(groups.cbegin(), groups.cend(), [](const auto &gdata) {
             return gdata.size == (sizeof...(Owned) + sizeof...(Get) + sizeof...(Exclude))
                    && (gdata.owned(type_hash<std::remove_const_t<Owned>>::value()) && ...)
@@ -1340,12 +1341,9 @@ public:
                    && (gdata.exclude(type_hash<std::remove_const_t<Exclude>>::value()) && ...);
         });
 
-        if(it == groups.cend()) {
-            return {};
-        } else {
-            using handler_type = group_handler<exclude_t<std::remove_const_t<Exclude>...>, get_t<std::remove_const_t<Get>...>, std::remove_const_t<Owned>...>;
-            return {static_cast<handler_type *>(it->group.get())->current, assure<std::remove_const_t<Owned>>()..., assure<std::remove_const_t<Get>>()...};
-        }
+        using handler_type = group_handler<exclude_t<std::remove_const_t<Exclude>...>, get_t<std::remove_const_t<Get>...>, std::remove_const_t<Owned>...>;
+        using group_type = basic_group<owned_t<storage_for_t<const Owned, entity_type>...>, get_t<storage_for_t<const Get, entity_type>...>, exclude_t<storage_for_t<const Exclude, entity_type>...>>;
+        return it == groups.cend() ? group_type{} : group_type{static_cast<handler_type *>(it->group.get())->current, assure<std::remove_const_t<Owned>>()..., assure<std::remove_const_t<Get>>()...};
     }
 
     /**
@@ -1361,15 +1359,15 @@ public:
 
     /**
      * @brief Checks whether a group can be sorted.
-     * @tparam Owned Types of components owned by the group.
-     * @tparam Get Types of components observed by the group.
-     * @tparam Exclude Types of components used to filter the group.
+     * @tparam Owned Type of storage _owned_ by the group.
+     * @tparam Get Type of storage _observed_ by the group.
+     * @tparam Exclude Type of storage used to filter the group.
      * @return True if the group can be sorted, false otherwise.
      */
     template<typename... Owned, typename... Get, typename... Exclude>
-    [[nodiscard]] bool sortable(const basic_group<entity_type, owned_t<Owned...>, get_t<Get...>, exclude_t<Exclude...>> &) noexcept {
+    [[nodiscard]] bool sortable(const basic_group<owned_t<Owned...>, get_t<Get...>, exclude_t<Exclude...>> &) noexcept {
         constexpr auto size = sizeof...(Owned) + sizeof...(Get) + sizeof...(Exclude);
-        auto pred = [size](const auto &gdata) { return (0u + ... + gdata.owned(type_hash<std::remove_const_t<Owned>>::value())) && (size < gdata.size); };
+        auto pred = [size](const auto &gdata) { return (0u + ... + gdata.owned(type_hash<typename Owned::value_type>::value())) && (size < gdata.size); };
         return std::find_if(groups.cbegin(), groups.cend(), std::move(pred)) == groups.cend();
     }
 
