@@ -221,6 +221,9 @@ class basic_registry {
     using entity_traits = entt_traits<Entity>;
     using basic_common_type = basic_sparse_set<Entity>;
 
+    template<typename Owned, typename Get, typename Exclude>
+    using group_type = basic_group<type_list_transform_t<Owned, storage_for>, type_list_transform_t<Get, storage_for>, type_list_transform_t<Exclude, storage_for>>;
+
     template<typename...>
     struct group_handler;
 
@@ -1250,7 +1253,7 @@ public:
      * @return A newly created group.
      */
     template<typename... Owned, typename... Get, typename... Exclude>
-    [[nodiscard]] basic_group<owned_t<storage_for_t<Owned, entity_type>...>, get_t<storage_for_t<Get, entity_type>...>, exclude_t<storage_for_t<Exclude, entity_type>...>> group(get_t<Get...> = {}, exclude_t<Exclude...> = {}) {
+    [[nodiscard]] group_type<owned_t<Owned...>, get_t<Get...>, exclude_t<Exclude...>> group(get_t<Get...> = {}, exclude_t<Exclude...> = {}) {
         static_assert(sizeof...(Owned) + sizeof...(Get) > 0, "Exclusion-only groups are not supported");
         static_assert(sizeof...(Owned) + sizeof...(Get) + sizeof...(Exclude) > 1, "Single component groups are not allowed");
 
@@ -1332,7 +1335,7 @@ public:
 
     /*! @copydoc group */
     template<typename... Owned, typename... Get, typename... Exclude>
-    [[nodiscard]] basic_group<owned_t<storage_for_t<const Owned, entity_type>...>, get_t<storage_for_t<const Get, entity_type>...>, exclude_t<storage_for_t<const Exclude, entity_type>...>> group_if_exists(get_t<Get...> = {}, exclude_t<Exclude...> = {}) const {
+    [[nodiscard]] group_type<owned_t<const Owned...>, get_t<const Get...>, exclude_t<const Exclude...>> group_if_exists(get_t<Get...> = {}, exclude_t<Exclude...> = {}) const {
         auto it = std::find_if(groups.cbegin(), groups.cend(), [](const auto &gdata) {
             return gdata.size == (sizeof...(Owned) + sizeof...(Get) + sizeof...(Exclude))
                    && (gdata.owned(type_hash<std::remove_const_t<Owned>>::value()) && ...)
