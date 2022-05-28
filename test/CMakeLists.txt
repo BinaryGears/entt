@@ -52,8 +52,14 @@ function(SETUP_TARGET TARGET_NAME)
             ${TARGET_NAME}
             PRIVATE
                 /EHsc /W1 /wd4996 /w14800
-                $<$<CONFIG:Debug>:/Od>
+                $<$<CONFIG:Debug>:/Od /INCREMENTAL:NO>
                 $<$<CONFIG:Release>:/O2>
+        )
+
+        target_link_options(
+            ${TARGET_NAME}
+            PRIVATE
+                $<$<CONFIG:Debug>:/INCREMENTAL:NO>
         )
     else()
         target_compile_options(
